@@ -12,6 +12,14 @@ Then open `http://localhost:8000/`. (`fetch()` to Supabase needs `http://`, not 
 
 Append `?fastround=1` to the URL for a shortened 8s round, handy for quickly testing the game-over/leaderboard flow.
 
+### Or with Docker
+
+```bash
+./scripts/run.sh
+```
+
+Builds an nginx image serving the static files and opens on `http://localhost` (port 80). No build step either way — it's the same plain HTML/CSS/JS, just served in a container instead of via `http.server`.
+
 Without a Supabase project configured (see below), the page still runs — the **Join Queue** button becomes a plain **Start** button and plays solo, and the leaderboard shows a "needs setup" message instead of trying to load. This is controlled by the `SUPABASE_CONFIGURED` check in [`js/config.js`](js/config.js), which only requires that `SUPABASE_URL`/`SUPABASE_ANON_KEY` no longer be the placeholder values below.
 
 ## Setting up Supabase (leaderboard + turn queue)
@@ -52,6 +60,7 @@ js/queue.js               # turn queue REST calls + Realtime (Postgres Changes, 
 js/spectator.js             # read-only mirrored board driven by broadcast game events
 js/main.js                    # DOM wiring: queue/spectate/play orchestration, game-over flow
 supabase/schema.sql             # SQL to run once in Supabase's SQL editor
+Dockerfile, docker-compose.yml, nginx.conf, scripts/run.sh   # optional Docker setup, see "Run locally"
 ```
 
 The turn queue's live spectating relies on Supabase Realtime, loaded via a pinned-version CDN `<script>` tag in `index.html` (`@supabase/supabase-js`) — the only external dependency in the project; everything else is plain fetch/DOM APIs.

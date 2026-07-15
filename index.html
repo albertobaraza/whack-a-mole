@@ -26,11 +26,17 @@
       </div>
     </section>
 
+    <p class="hud__mode" id="modeLabel"></p>
+
     <section class="board" id="board" aria-label="Game board">
-      <!-- .hole elements injected by js/game.js -->
+      <!-- .hole elements injected by js/game.js or js/spectator.js -->
     </section>
 
-    <button class="start-btn" id="startBtn" type="button">Start</button>
+    <section class="queue-panel" id="queuePanel" aria-live="polite">
+      <button class="start-btn" id="joinQueueBtn" type="button">Join Queue</button>
+      <p class="queue-panel__status" id="queueStatusText" hidden></p>
+      <ol class="queue-panel__list" id="queueListEl" aria-label="Players waiting"></ol>
+    </section>
 
     <section class="leaderboard" id="leaderboard" aria-label="Leaderboard">
       <h2 class="leaderboard__title">Top Scores</h2>
@@ -54,9 +60,12 @@
   </dialog>
 
   <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script src="js/sounds.js"></script>
   <script src="js/leaderboard.js"></script>
   <script src="js/game.js"></script>
+  <script src="js/queue.js"></script>
+  <script src="js/spectator.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

@@ -43,6 +43,7 @@ const Game = (() => {
     hole.el.classList.add("is-hit");
     setTimeout(() => hole.el.classList.remove("is-hit"), 220);
     spawnWhackBurst(hole, e);
+    callbacks.onHoleHit?.(holes.indexOf(hole));
 
     score += 1;
     callbacks.onScoreChange?.(score);
@@ -65,8 +66,12 @@ const Game = (() => {
     hole.resolved = false;
     hole.el.classList.add("is-up");
     Sounds.playPop();
+    callbacks.onHoleShow?.(holes.indexOf(hole), upMs);
     hole.hideTimeoutId = setTimeout(() => {
-      if (!hole.resolved) Sounds.playMiss();
+      if (!hole.resolved) {
+        Sounds.playMiss();
+        callbacks.onHoleMiss?.(holes.indexOf(hole));
+      }
       hideHole(hole);
     }, upMs);
   }
@@ -78,6 +83,7 @@ const Game = (() => {
       clearTimeout(hole.hideTimeoutId);
       hole.hideTimeoutId = null;
     }
+    callbacks.onHoleHide?.(holes.indexOf(hole));
   }
 
   function pickHole(maxConcurrent) {
@@ -127,5 +133,14 @@ const Game = (() => {
     callbacks.onGameOver?.(score);
   }
 
-  return { buildBoard, start };
+  // Halts a round from the outside (e.g. the turn was taken away) without
+  // the normal game-over fanfare/callback — just stops the timers so they
+  // don't keep silently spawning/ticking against a board no one owns.
+  function stop() {
+    running = false;
+    clearTimeout(spawnTimeoutId);
+    clearInterval(tickIntervalId);
+  }
+
+  return { buildBoard, start, stop, HOLE_COUNT };
 })();

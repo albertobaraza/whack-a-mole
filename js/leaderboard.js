@@ -27,6 +27,7 @@ const Leaderboard = (() => {
   }
 
   async function submitScore(playerName, score) {
+    if (!SUPABASE_CONFIGURED) return;
     const res = await fetchWithTimeout(TABLE_URL, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
@@ -42,6 +43,10 @@ const Leaderboard = (() => {
   }
 
   async function render(listEl) {
+    if (!SUPABASE_CONFIGURED) {
+      listEl.innerHTML = `<li class="leaderboard__empty">Leaderboard needs Supabase setup — see README.</li>`;
+      return;
+    }
     listEl.innerHTML = `<li class="leaderboard__empty">Loading…</li>`;
     try {
       const rows = await fetchTopScores();

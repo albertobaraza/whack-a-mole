@@ -113,13 +113,19 @@ const Game = (() => {
     if (remainingMs <= 0) end();
   }
 
-  function start(cb) {
+  // `startAt` lets a caller resume a round already in progress (e.g. the
+  // active player reloaded mid-round) using the turn's real start time
+  // instead of restarting the full duration from this page load. Score
+  // still resets to 0 either way — it's never persisted anywhere — but the
+  // clock and spawn ramp correctly reflect actual elapsed time.
+  function start(cb, startAt = Date.now()) {
     callbacks = cb;
     score = 0;
     running = true;
-    startTime = Date.now();
+    startTime = startAt;
     callbacks.onScoreChange?.(score);
-    callbacks.onTimeChange?.(Math.ceil(ROUND_DURATION_MS / 1000));
+    const remainingMs = Math.max(ROUND_DURATION_MS - (Date.now() - startTime), 0);
+    callbacks.onTimeChange?.(Math.ceil(remainingMs / 1000));
     scheduleSpawn();
     tickIntervalId = setInterval(tick, 100);
   }
@@ -134,12 +140,20 @@ const Game = (() => {
   }
 
   // Halts a round from the outside (e.g. the turn was taken away) without
-  // the normal game-over fanfare/callback — just stops the timers so they
-  // don't keep silently spawning/ticking against a board no one owns.
+  // the normal game-over fanfare/callback — just stops the timers and hides
+  // any up holes so nothing keeps silently spawning/ticking/broadcasting
+  // against a board no one owns. Callbacks are cleared first so hideHole's
+  // callbacks.onHoleHide?.(...) can't fire on behalf of the ended game (a
+  // hole still up at this point would otherwise leave its own hide timeout
+  // pending, which — left uncleared — fires later using these same stale
+  // callbacks, broadcasting a hide event for whichever player owns the
+  // board by then).
   function stop() {
     running = false;
     clearTimeout(spawnTimeoutId);
     clearInterval(tickIntervalId);
+    callbacks = {};
+    holes.forEach(hideHole);
   }
 
   return { buildBoard, start, stop, HOLE_COUNT };

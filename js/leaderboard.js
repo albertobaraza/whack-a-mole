@@ -1,39 +1,26 @@
-// Reads/writes the global leaderboard directly against Supabase's REST API
-// using the public anon key — see config.js for why that key is safe to ship.
+// Reads/writes the global leaderboard via the shared Supabase client — see
+// config.js for why the public anon key is safe to ship.
 const Leaderboard = (() => {
-  const TABLE_URL = `${SUPABASE_URL}/rest/v1/scores`;
-
-  const headers = {
-    apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-  };
-
-  // An unreachable/misconfigured Supabase URL (e.g. the placeholder in
-  // config.js before setup) can otherwise hang fetch() indefinitely.
-  const FETCH_TIMEOUT_MS = 8000;
-
-  function fetchWithTimeout(url, options) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeoutId));
-  }
+  const { sb, timeoutSignal } = SupabaseClient;
 
   async function fetchTopScores(limit = 10) {
-    const res = await fetchWithTimeout(`${TABLE_URL}?select=player_name,score&order=score.desc&limit=${limit}`, {
-      headers,
-    });
-    if (!res.ok) throw new Error(`Failed to load leaderboard (${res.status})`);
-    return res.json();
+    const { data, error } = await sb
+      .from("scores")
+      .select("player_name,score")
+      .order("score", { ascending: false })
+      .limit(limit)
+      .abortSignal(timeoutSignal());
+    if (error) throw new Error(`Failed to load leaderboard: ${error.message}`);
+    return data;
   }
 
   async function submitScore(playerName, score) {
     if (!SUPABASE_CONFIGURED) return;
-    const res = await fetchWithTimeout(TABLE_URL, {
-      method: "POST",
-      headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ player_name: playerName, score }),
-    });
-    if (!res.ok) throw new Error(`Failed to submit score (${res.status})`);
+    const { error } = await sb
+      .from("scores")
+      .insert({ player_name: playerName, score })
+      .abortSignal(timeoutSignal());
+    if (error) throw new Error(`Failed to submit score: ${error.message}`);
   }
 
   function escapeHtml(str) {

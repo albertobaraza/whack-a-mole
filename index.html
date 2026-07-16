@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Whack-a-Mole</title>
+  <meta name="description" content="A quick whack-a-mole game with a global leaderboard.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="topbar__title">Whack-a-Mole</h1>
+    <div class="topbar__actions">
+      <button class="bug-report-link" id="reportBugBtn" type="button" aria-label="Report a bug">🐛</button>
+      <button class="mute-toggle" id="muteToggle" type="button" aria-pressed="false" aria-label="Mute sound">🔊</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="hud">
+      <div class="hud__stat">
+        <span class="hud__label">Score</span>
+        <span class="hud__value" id="scoreValue">0</span>
+      </div>
+      <div class="hud__stat">
+        <span class="hud__label">Time</span>
+        <span class="hud__value" id="timeValue">30</span>
+      </div>
+    </section>
+
+    <p class="hud__mode" id="modeLabel"></p>
+
+    <section class="board" id="board" aria-label="Game board">
+      <!-- .hole elements injected by js/game.js or js/spectator.js -->
+    </section>
+
+    <section class="queue-panel" id="queuePanel" aria-live="polite">
+      <button class="start-btn" id="joinQueueBtn" type="button">Join Queue</button>
+      <p class="queue-panel__status" id="queueStatusText" hidden></p>
+      <ol class="queue-panel__list" id="queueListEl" aria-label="Players waiting"></ol>
+    </section>
+
+    <section class="leaderboard" id="leaderboard" aria-label="Leaderboard">
+      <h2 class="leaderboard__title">Top Scores</h2>
+      <ol class="leaderboard__list" id="leaderboardList">
+        <li class="leaderboard__empty">Loading…</li>
+      </ol>
+    </section>
+  </main>
+
+  <dialog class="dialog game-over" id="gameOverDialog">
+    <form method="dialog" class="dialog__form" id="gameOverForm">
+      <h2>Game Over</h2>
+      <p class="game-over__score">You scored <strong id="finalScoreValue">0</strong>!</p>
+      <label class="game-over__label" for="playerNameInput">Enter your name for the leaderboard</label>
+      <input class="game-over__input" id="playerNameInput" type="text" maxlength="20" placeholder="Anonymous" autocomplete="off">
+      <div class="dialog__actions">
+        <button class="dialog__secondary" id="skipBtn" type="button">Skip</button>
+        <button class="dialog__primary" id="submitScoreBtn" type="submit">Submit Score</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog bug-report" id="bugReportDialog">
+    <form class="dialog__form" id="bugReportForm">
+      <h2>Report a bug</h2>
+      <label class="bug-report__label" for="bugReportInput">What went wrong?</label>
+      <textarea class="bug-report__textarea" id="bugReportInput" maxlength="2000" placeholder="Describe what happened…" required></textarea>
+      <p class="bug-report__status" id="bugReportStatus" hidden></p>
+      <div class="dialog__actions">
+        <button class="dialog__secondary" id="bugReportCancelBtn" type="button">Cancel</button>
+        <button class="dialog__primary" id="bugReportSubmitBtn" type="submit">Send</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/sounds.js"></script>
+  <script src="js/leaderboard.js"></script>
+  <script src="js/bug-report.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/queue.js"></script>
+  <script src="js/spectator.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

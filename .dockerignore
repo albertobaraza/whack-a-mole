@@ -1,0 +1,10 @@
+.git
+.claude
+.github
+.vscode
+scripts
+supabase
+*.md
+*.log
+.DS_Store
+TODO.md

@@ -213,13 +213,17 @@ grant execute on function public.leave_queue() to authenticated;
 alter publication supabase_realtime add table public.queue;
 
 -- ── Bug reports ───────────────────────────────────────────────────────────
--- Anyone can submit a report with no account/login needed. Unlike scores/
--- queue, these are never read back by the client — no `for select` policy
--- exists at all, so `anon`/`authenticated` can insert but never list or
--- read reports back (RLS denies by default). Check them via the Supabase
--- dashboard's Table Editor, which uses the service role and bypasses RLS.
+-- Uses the same anonymous-auth session as the queue (client_id defaults to
+-- auth.uid()) so submissions can be capped per session — 5 per rolling 24h
+-- window, enforced inside submit_bug_report below. There is deliberately no
+-- direct INSERT (or SELECT) policy at all: submission only goes through
+-- that SECURITY DEFINER RPC, so the cap can't be bypassed by inserting
+-- directly, and reports are never read back by the client either. Check
+-- them via the Supabase dashboard's Table Editor, which uses the service
+-- role and bypasses RLS.
 create table public.bug_reports (
   id bigint generated always as identity primary key,
+  client_id uuid not null default auth.uid(),
   description text not null check (char_length(description) between 1 and 2000),
   user_agent text,
   created_at timestamptz not null default now()
@@ -227,8 +231,23 @@ create table public.bug_reports (
 
 alter table public.bug_reports enable row level security;
 
-create policy "Public bug report submission"
-  on public.bug_reports
-  for insert
-  to public
-  with check (true);
+create or replace function public.submit_bug_report(p_description text, p_user_agent text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if (
+    select count(*) from public.bug_reports
+     where client_id = auth.uid()
+       and created_at > now() - interval '1 day'
+  ) >= 5 then
+    raise exception 'Daily bug report limit reached — try again tomorrow.';
+  end if;
+
+  insert into public.bug_reports (client_id, description, user_agent)
+  values (auth.uid(), p_description, p_user_agent);
+end;
+$$;
+grant execute on function public.submit_bug_report(text, text) to authenticated;

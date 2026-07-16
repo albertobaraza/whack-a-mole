@@ -48,6 +48,8 @@ Because this is a static site with no server, scoring is client-authoritative: a
 
 The turn queue needs a stronger guarantee than the leaderboard: reading the queue is public (anyone can see who's playing/waiting, including their `client_id` — that's not secret), but *acting* on a turn is not. Every browser signs in anonymously (no email/password, just a real Supabase Auth session) on load, and `client_id` defaults to that session's `auth.uid()` rather than a value the client sends. `claim_next_turn`/`release_turn`/`leave_queue` (all `SECURITY DEFINER` RPCs in [`supabase/schema.sql`](supabase/schema.sql)) only ever act on the caller's own row, identified by their session — not a client-supplied id — so knowing someone else's `client_id` no longer lets you end their turn or evict them from the queue. The one exception is `release_stale_member`, which by nature acts on *someone else's* row (reclaiming a turn/slot whose owner has disconnected); it requires the caller to themselves currently hold an active queue row, and only after a fixed grace period matching the client-side stale-presence timer — this narrows the exposure to genuine, currently-queued participants rather than an arbitrary caller, but (being a client-triggered heuristic rather than a server-verified heartbeat) doesn't eliminate an impatient participant reclaiming a turn right at the grace-period boundary. A partial unique index also guarantees at the database level that only one row can ever be `playing`, independent of any application bug.
 
+Bug reports reuse the same anonymous session for a different reason: rate-limiting. There's no direct `INSERT` policy on `bug_reports` at all — submission only goes through `submit_bug_report`, a `SECURITY DEFINER` RPC that caps each session at 5 reports per rolling 24h window before inserting. Reports are never read back by the client either; check them via the Supabase dashboard's Table Editor.
+
 ## Project structure
 
 ```
@@ -58,7 +60,7 @@ js/supabase-client.js # shared Supabase client + fetch-timeout helper
 js/sounds.js          # Web Audio API synthesized sound effects
 js/game.js              # grid state, spawn/difficulty ramp, scoring, timer
 js/leaderboard.js        # Supabase REST calls + leaderboard rendering
-js/bug-report.js          # Supabase insert-only bug report submission
+js/bug-report.js          # rate-limited bug report submission via Supabase RPC
 js/queue.js               # turn queue REST calls + Realtime (Postgres Changes, Presence, Broadcast)
 js/spectator.js             # read-only mirrored board driven by broadcast game events
 js/main.js                    # DOM wiring: queue/spectate/play orchestration, game-over flow

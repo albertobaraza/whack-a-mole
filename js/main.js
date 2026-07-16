@@ -83,7 +83,9 @@ bugReportForm.addEventListener("submit", async (e) => {
   } catch (err) {
     console.error(err);
     bugReportStatus.hidden = false;
-    bugReportStatus.textContent = "Couldn't send, please try again.";
+    bugReportStatus.textContent = err.message.includes("Daily bug report limit")
+      ? "You've reached today's bug report limit, try again tomorrow."
+      : "Couldn't send, please try again.";
   } finally {
     bugReportSubmitBtn.disabled = false;
   }

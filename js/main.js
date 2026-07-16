@@ -15,6 +15,13 @@ const skipBtn = document.getElementById("skipBtn");
 const joinQueueBtn = document.getElementById("joinQueueBtn");
 const queueStatusTextEl = document.getElementById("queueStatusText");
 const queueListEl = document.getElementById("queueListEl");
+const reportBugBtn = document.getElementById("reportBugBtn");
+const bugReportDialog = document.getElementById("bugReportDialog");
+const bugReportForm = document.getElementById("bugReportForm");
+const bugReportInput = document.getElementById("bugReportInput");
+const bugReportStatus = document.getElementById("bugReportStatus");
+const bugReportCancelBtn = document.getElementById("bugReportCancelBtn");
+const bugReportSubmitBtn = document.getElementById("bugReportSubmitBtn");
 
 let lastScore = 0;
 
@@ -54,6 +61,31 @@ gameOverForm.addEventListener("submit", async (e) => {
     Leaderboard.render(leaderboardListEl);
   } catch (err) {
     console.error(err);
+  }
+});
+
+reportBugBtn.addEventListener("click", () => {
+  bugReportInput.value = "";
+  bugReportStatus.hidden = true;
+  bugReportDialog.showModal();
+});
+
+bugReportCancelBtn.addEventListener("click", () => {
+  bugReportDialog.close();
+});
+
+bugReportForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  bugReportSubmitBtn.disabled = true;
+  try {
+    await BugReport.submit(bugReportInput.value.trim());
+    bugReportDialog.close();
+  } catch (err) {
+    console.error(err);
+    bugReportStatus.hidden = false;
+    bugReportStatus.textContent = "Couldn't send, please try again.";
+  } finally {
+    bugReportSubmitBtn.disabled = false;
   }
 });
 

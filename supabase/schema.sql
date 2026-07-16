@@ -211,3 +211,24 @@ grant execute on function public.leave_queue() to authenticated;
 -- needs to be turned on for this table in the Supabase dashboard if it
 -- isn't already (Database → Replication) — a one-time manual project step.
 alter publication supabase_realtime add table public.queue;
+
+-- ── Bug reports ───────────────────────────────────────────────────────────
+-- Anyone can submit a report with no account/login needed. Unlike scores/
+-- queue, these are never read back by the client — no `for select` policy
+-- exists at all, so `anon`/`authenticated` can insert but never list or
+-- read reports back (RLS denies by default). Check them via the Supabase
+-- dashboard's Table Editor, which uses the service role and bypasses RLS.
+create table public.bug_reports (
+  id bigint generated always as identity primary key,
+  description text not null check (char_length(description) between 1 and 2000),
+  user_agent text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.bug_reports enable row level security;
+
+create policy "Public bug report submission"
+  on public.bug_reports
+  for insert
+  to public
+  with check (true);

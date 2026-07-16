@@ -58,6 +58,7 @@ js/supabase-client.js # shared Supabase client + fetch-timeout helper
 js/sounds.js          # Web Audio API synthesized sound effects
 js/game.js              # grid state, spawn/difficulty ramp, scoring, timer
 js/leaderboard.js        # Supabase REST calls + leaderboard rendering
+js/bug-report.js          # Supabase insert-only bug report submission
 js/queue.js               # turn queue REST calls + Realtime (Postgres Changes, Presence, Broadcast)
 js/spectator.js             # read-only mirrored board driven by broadcast game events
 js/main.js                    # DOM wiring: queue/spectate/play orchestration, game-over flow
